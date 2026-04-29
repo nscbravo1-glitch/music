@@ -25,7 +25,7 @@
         html, body {
             width: 100%;
             height: 100%;
-            min-height: 100vh;
+            min-height: 100dvh;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background: #000;
             color: #fff;
@@ -42,15 +42,15 @@
             flex-direction: column;
             padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
             gap: 12px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         /* Container Sections */
         .player-container {
-            flex: 1;
             display: flex;
             flex-direction: column;
             gap: 12px;
-            min-height: 0;
             width: 100%;
             max-width: 100%;
         }
@@ -80,7 +80,7 @@
         .album-art {
             width: 100%;
             aspect-ratio: 1;
-            background: #222;
+            background: #1d1c1c;
             border-radius: 8px;
             display: flex;
             align-items: center;
@@ -242,10 +242,9 @@
 
         /* Playlist */
         .playlist-section {
-            flex: 1;
+            max-height: 200px;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
-            min-height: 0;
             display: flex;
             flex-direction: column;
         }
