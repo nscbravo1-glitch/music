@@ -434,15 +434,26 @@
                 <input type="file" id="fileInput" accept=".mp3,audio/mpeg" multiple>
                 <button class="upload-btn" id="uploadBtn">📁 Upload MP3 Files</button>
             </div>
+            <div style="font-size: 11px; color: #666; margin-top: 6px; text-align: center;">
+                ✅ เพลงจะถูกบันทึกถาวร - Refresh ก็ยังมีอยู่
+            </div>
 
             <!-- Add from URL -->
-            <div style="display: flex; gap: 8px; margin-top: 8px;">
-                <input type="text" id="urlInput" class="search-input" placeholder="Paste URL (https://...)" style="margin-bottom: 0; flex: 1;">
-                <button id="addUrlBtn" class="upload-btn" style="width: auto; min-width: 60px; padding: 12px;">🔗</button>
+            <div style="display: flex; gap: 8px; margin-top: 8px; flex-direction: column;">
+                <div style="font-size: 12px; color: #aaa; font-weight: 500;">🔗 เพิ่มเพลงจาก URL:</div>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="urlInput" class="search-input" placeholder="Paste URL (https://...)" style="margin-bottom: 0; flex: 1;">
+                    <button id="addUrlBtn" class="upload-btn" style="width: auto; min-width: 70px; padding: 12px; font-size: 14px;">เพิ่ม</button>
+                </div>
             </div>
 
             <!-- Song Name Input for URL -->
-            <input type="text" id="songNameInput" class="search-input" placeholder="Song name (optional)" style="margin-top: 8px; margin-bottom: 0;">
+            <input type="text" id="songNameInput" class="search-input" placeholder="📝 ชื่อเพลง (ตัวเลือก)" style="margin-top: 8px; margin-bottom: 0;">
+            <div style="font-size: 11px; color: #666; margin-top: 6px; text-align: center; line-height: 1.4;">
+                💡 วิธี: วาง URL → ตั้งชื่อ (ตัวเลือก) → กดปุ่ม "เพิ่ม"<br>
+                🌐 เพลง URL จะอยู่ถาวร เมื่อ refresh ยังคงมี<br>
+                ⚠️ YouTube ใช้ไม่ได้ (CORS blocked) - ใช้ Direct MP3 link หรือ YouTube to MP3
+            </div>
         </div>
 
         <!-- Search -->

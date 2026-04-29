@@ -42,6 +42,9 @@ class MusicPlayer {
         this.loopMode = 0; // 0: no loop, 1: loop all, 2: loop one
         this.currentFileIndex = null;
 
+        // IndexedDB
+        this.db = null;
+
         // Initialize
         this.init();
     }
@@ -63,14 +66,46 @@ class MusicPlayer {
 
     init() {
         try {
-            this.setupEventListeners();
-            this.loadSongsFromStorage();
-            this.registerServiceWorker();
-            this.setupMediaSession();
-            console.log('✓ Music Player initialized successfully');
+            this.initIndexedDB().then(() => {
+                this.setupEventListeners();
+                this.loadSongsFromStorage();
+                this.renderPlaylist();
+                this.registerServiceWorker();
+                this.setupMediaSession();
+                
+                if (this.songs.length === 0) {
+                    if (this.status) this.status.textContent = '📝 อัพโหลดเพลงจากเครื่องหรือ URL';
+                }
+                console.log('✓ Music Player initialized successfully');
+            });
         } catch (error) {
             console.error('Error initializing player:', error);
         }
+    }
+
+    // === IndexedDB ===
+    initIndexedDB() {
+        return new Promise((resolve) => {
+            const request = indexedDB.open('MusicPlayerDB', 1);
+            
+            request.onerror = () => {
+                console.error('IndexedDB error');
+                resolve();
+            };
+            
+            request.onsuccess = () => {
+                this.db = request.result;
+                console.log('✓ IndexedDB initialized');
+                resolve();
+            };
+            
+            request.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains('songs')) {
+                    db.createObjectStore('songs', { keyPath: 'id' });
+                }
+            };
+        });
     }
 
     // === Event Listeners ===
@@ -119,6 +154,8 @@ class MusicPlayer {
         if (!files.length) return;
 
         try {
+            if (this.status) this.status.textContent = '💾 กำลังบันทึก...';
+
             for (const file of files) {
                 if (!file.type.includes('audio')) {
                     console.warn(`Skipped non-audio file: ${file.name}`);
@@ -131,18 +168,87 @@ class MusicPlayer {
 
                 const song = {
                     id: Date.now() + Math.random(),
-                    name: file.name.replace('.mp3', '').replace('.mp4', ''),
+                    name: file.name.replace('.mp3', '').replace('.mp4', '').replace('.m4a', '').replace('.wav', ''),
                     url: url,
                     duration: duration,
-                    artist: 'Local'
+                    artist: 'Local',
+                    blob: blob, // เก็บ blob ด้วย
+                    type: file.type
                 };
 
                 this.songs.push(song);
+                
+                // บันทึกลง IndexedDB
+                if (this.db) {
+                    await this.saveToIndexedDB(song);
+                }
             }
 
             this.saveSongsToStorage();
             this.filteredSongs = [...this.songs];
             this.renderPlaylist();
+            if (this.status) this.status.textContent = `✓ บันทึก ${files.length} เพลงสำเร็จ`;
+            if (this.fileInput) this.fileInput.value = '';
+
+            if (this.songs.length === 1) {
+                this.playIndex(0);
+            }
+        } catch (error) {
+            console.error('Error uploading files:', error);
+            if (this.status) this.status.textContent = '✗ Error uploading files';
+        }
+    }
+
+    // Save song to IndexedDB
+    saveToIndexedDB(song) {
+        return new Promise((resolve) => {
+            if (!this.db) {
+                resolve();
+                return;
+            }
+
+            const transaction = this.db.transaction('songs', 'readwrite');
+            const store = transaction.objectStore('songs');
+            
+            const songData = {
+                id: song.id,
+                name: song.name,
+                duration: song.duration,
+                artist: song.artist,
+                blob: song.blob,
+                type: song.type
+            };
+            
+            store.put(songData);
+            
+            transaction.oncomplete = () => {
+                console.log(`✓ Saved to IndexedDB: ${song.name}`);
+                resolve();
+            };
+        });
+    }
+
+    // Get song from IndexedDB
+    getFromIndexedDB(songId) {
+        return new Promise((resolve) => {
+            if (!this.db) {
+                resolve(null);
+                return;
+            }
+
+            const transaction = this.db.transaction('songs', 'readonly');
+            const store = transaction.objectStore('songs');
+            const request = store.get(songId);
+            
+            request.onsuccess = () => {
+                resolve(request.result || null);
+            };
+            
+            request.onerror = () => {
+                resolve(null);
+            };
+        });
+    }
             if (this.status) this.status.textContent = `✓ Added ${files.length} song(s)`;
             if (this.fileInput) this.fileInput.value = '';
 
@@ -438,6 +544,12 @@ class MusicPlayer {
 
         // Remove from songs array
         this.songs.splice(index, 1);
+        
+        // ลบจาก IndexedDB ถ้าเป็นเพลง Local
+        if (song.artist === 'Local' && this.db) {
+            this.deleteFromIndexedDB(songId);
+        }
+        
         this.saveSongsToStorage();
         
         // Update filtered songs and rerender
@@ -452,16 +564,36 @@ class MusicPlayer {
         if (this.status) this.status.textContent = `🗑️ ลบเพลง: ${song.name}`;
     }
 
+    // Delete song from IndexedDB
+    deleteFromIndexedDB(songId) {
+        return new Promise((resolve) => {
+            if (!this.db) {
+                resolve();
+                return;
+            }
+
+            const transaction = this.db.transaction('songs', 'readwrite');
+            const store = transaction.objectStore('songs');
+            store.delete(songId);
+            
+            transaction.oncomplete = () => {
+                console.log(`✓ ลบออกจาก IndexedDB`);
+                resolve();
+            };
+        });
+    }
+
     // === Storage ===
     saveSongsToStorage() {
         try {
-            const metadata = this.songs.map(song => ({
+            const songsData = this.songs.map(song => ({
                 id: song.id,
                 name: song.name,
                 duration: song.duration,
-                artist: song.artist
+                artist: song.artist,
+                url: song.url // เก็บ URL (ใช้ได้กับ Online songs)
             }));
-            localStorage.setItem('musicPlayer_songs', JSON.stringify(metadata));
+            localStorage.setItem('musicPlayer_songs', JSON.stringify(songsData));
         } catch (error) {
             console.error('Error saving to storage:', error);
         }
@@ -469,13 +601,72 @@ class MusicPlayer {
 
     loadSongsFromStorage() {
         try {
+            // 1. โหลดเพลง Local จาก IndexedDB
+            if (this.db) {
+                this.loadFromIndexedDB();
+            }
+            
+            // 2. โหลดเพลง Online จาก localStorage
             const stored = localStorage.getItem('musicPlayer_songs');
             if (stored) {
-                console.log('Found songs in storage (metadata only)');
+                const songsData = JSON.parse(stored);
+                
+                for (const song of songsData) {
+                    // ถ้าเป็นเพลง Online (ไม่ใช่ blob)
+                    if (!song.url.startsWith('blob:')) {
+                        // เพิ่มถ้าไม่ซ้ำ
+                        if (!this.songs.find(s => s.id === song.id)) {
+                            this.songs.push(song);
+                        }
+                    }
+                }
+                
+                if (this.songs.length > 0) {
+                    this.filteredSongs = [...this.songs];
+                    console.log(`✓ โหลด ${this.songs.length} เพลง`);
+                }
             }
         } catch (error) {
             console.error('Error loading from storage:', error);
         }
+    }
+
+    // Load all songs from IndexedDB
+    loadFromIndexedDB() {
+        return new Promise((resolve) => {
+            if (!this.db) {
+                resolve();
+                return;
+            }
+
+            const transaction = this.db.transaction('songs', 'readonly');
+            const store = transaction.objectStore('songs');
+            const request = store.getAll();
+            
+            request.onsuccess = () => {
+                const songsData = request.result;
+                for (const songData of songsData) {
+                    const url = URL.createObjectURL(songData.blob);
+                    const song = {
+                        id: songData.id,
+                        name: songData.name,
+                        url: url,
+                        duration: songData.duration,
+                        artist: songData.artist,
+                        blob: songData.blob,
+                        type: songData.type
+                    };
+                    this.songs.push(song);
+                }
+                console.log(`✓ โหลด ${songsData.length} เพลง local จาก IndexedDB`);
+                resolve();
+            };
+            
+            request.onerror = () => {
+                console.error('Error loading from IndexedDB');
+                resolve();
+            };
+        });
     }
 
     // === Media Session API ===
