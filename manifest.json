@@ -1,0 +1,62 @@
+{
+  "name": "Music Player",
+  "short_name": "Music",
+  "description": "Offline-capable progressive web app music player optimized for iOS",
+  "start_url": "/index.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#000000",
+  "background_color": "#000000",
+  "screenshots": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 540 720'><rect fill='%23000' width='540' height='720'/><circle cx='270' cy='200' r='80' fill='%231db954'/><text x='270' y='450' font-size='48' fill='%23fff' text-anchor='middle' font-family='system-ui'>Music Player</text></svg>",
+      "sizes": "540x720",
+      "type": "image/svg+xml",
+      "form_factor": "narrow"
+    }
+  ],
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23000' width='192' height='192' rx='45'/><circle cx='96' cy='96' r='50' fill='%231db954'/><circle cx='96' cy='96' r='38' fill='%23000'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23000' width='192' height='192' rx='45'/><circle cx='96' cy='96' r='50' fill='%231db954'/><circle cx='96' cy='96' r='38' fill='%23000'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["music", "multimedia"],
+  "shortcuts": [
+    {
+      "name": "Play/Pause",
+      "short_name": "Play",
+      "description": "Play or pause the current song",
+      "url": "/?action=play",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect fill='%231db954' width='96' height='96' rx='22'/><polygon points='35,25 35,71 70,48' fill='%23000'/></svg>",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Next Track",
+      "short_name": "Next",
+      "description": "Skip to the next song",
+      "url": "/?action=next",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect fill='%231db954' width='96' height='96' rx='22'/><polygon points='25,25 25,71 55,48' fill='%23000'/><rect x='60' y='25' width='6' height='46' fill='%23000'/></svg>",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
+  ]
+}

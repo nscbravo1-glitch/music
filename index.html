@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Music Player">
+    <meta name="theme-color" content="#000000">
+    <meta name="description" content="Offline music player for iPhone">
+
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect fill='%23000' width='180' height='180'/><circle cx='90' cy='90' r='40' fill='%23fff'/><circle cx='90' cy='90' r='30' fill='%23000'/></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23000' width='100' height='100'/><circle cx='50' cy='50' r='25' fill='%23fff'/><circle cx='50' cy='50' r='18' fill='%23000'/></svg>">
+
+    <title>Music Player</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #000;
+            color: #fff;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+            gap: 12px;
+        }
+
+        /* Container Sections */
+        .player-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-height: 0;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 18px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #888;
+        }
+
+        /* Now Playing Display */
+        .now-playing {
+            background: #111;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid #222;
+        }
+
+        .album-art {
+            width: 100%;
+            aspect-ratio: 1;
+            background: #222;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            font-size: 48px;
+        }
+
+        .song-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            line-height: 1.3;
+            word-break: break-word;
+        }
+
+        .song-artist {
+            font-size: 14px;
+            color: #777;
+            margin-bottom: 12px;
+        }
+
+        .progress-container {
+            width: 100%;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 3px;
+            background: #333;
+            border-radius: 2px;
+            cursor: pointer;
+            position: relative;
+            margin-bottom: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #1db954;
+            border-radius: 2px;
+            width: 0%;
+        }
+
+        .time-display {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #777;
+        }
+
+        /* Controls Section */
+        .controls {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: #1db954;
+            border: 2px solid #1db954;
+            color: #000;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 700;
+            transition: all 0.2s ease;
+            -webkit-appearance: none;
+            appearance: none;
+            padding: 14px 18px;
+            min-width: 70px;
+            min-height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 4px;
+            box-shadow: 0 4px 15px rgba(29, 185, 84, 0.3);
+        }
+
+        button:active {
+            background: #1ed760;
+            border-color: #1ed760;
+            transform: scale(0.95);
+            box-shadow: 0 2px 8px rgba(29, 185, 84, 0.5);
+        }
+
+        .btn-primary {
+            background: #1db954;
+            border-color: #1db954;
+            color: #000;
+            font-size: 18px;
+            min-width: 90px;
+            padding: 16px 24px;
+        }
+
+        .btn-secondary {
+            background: #333;
+            border-color: #555;
+            color: #fff;
+        }
+
+        .btn-icon {
+            font-size: 24px;
+            line-height: 1;
+            padding: 16px;
+            min-width: 70px;
+        }
+
+        /* Search and Filter */
+        .search-container {
+            margin-bottom: 12px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 16px;
+            -webkit-appearance: none;
+            appearance: none;
+            box-sizing: border-box;
+        }
+
+        .search-input::placeholder {
+            color: #555;
+        }
+
+        /* File Upload */
+        .upload-section {
+            margin-bottom: 12px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        input[type="file"] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .upload-btn {
+            width: 100%;
+            background: #1db954;
+            border-color: #1db954;
+            color: #000;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 700;
+            min-height: 60px;
+        }
+
+        /* Playlist */
+        .playlist-section {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .playlist-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #888;
+            margin-bottom: 8px;
+        }
+
+        .playlist {
+            list-style: none;
+            gap: 8px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .playlist-item {
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            word-break: break-word;
+        }
+
+        .playlist-item:active {
+            background: #1db954;
+            border-color: #1db954;
+        }
+
+        .playlist-item.active {
+            background: #1db954;
+            border-color: #1db954;
+            font-weight: 600;
+        }
+
+        .playlist-item-title {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .playlist-item-duration {
+            font-size: 12px;
+            color: #777;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #555;
+            padding: 24px;
+            font-size: 14px;
+        }
+
+        /* Status Indicators */
+        .status {
+            font-size: 12px;
+            color: #888;
+            text-align: center;
+            padding: 8px;
+        }
+
+        /* Mode Indicators */
+        .mode-indicators {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .mode-badge {
+            background: #222;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 11px;
+            color: #777;
+        }
+
+        .mode-badge.active {
+            background: #1db954;
+            border-color: #1db954;
+            color: #000;
+        }
+
+        /* Responsive */
+        @media (max-height: 600px) {
+            .now-playing {
+                padding: 12px;
+            }
+
+            .album-art {
+                display: none;
+            }
+
+            .controls {
+                gap: 8px;
+            }
+
+            button {
+                min-width: 50px;
+                min-height: 50px;
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+        }
+
+        /* Safe area support */
+        @supports (padding: max(0px)) {
+            body {
+                padding-left: max(10px, env(safe-area-inset-left));
+                padding-right: max(10px, env(safe-area-inset-right));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="player-container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🎵 Music Player</h1>
+        </div>
+
+        <!-- Now Playing -->
+        <div class="now-playing">
+            <div class="album-art" id="albumArt">🎵</div>
+            <div class="song-title" id="songTitle">No song playing</div>
+            <div class="song-artist" id="songArtist">(Upload MP3 files to start)</div>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="time-display">
+                    <span id="currentTime">0:00</span>
+                    <span id="duration">0:00</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Controls -->
+        <div class="controls">
+            <button id="prevBtn" class="btn-icon" title="Previous">⏮</button>
+            <button id="playBtn" class="btn-primary btn-icon" title="Play/Pause">▶</button>
+            <button id="nextBtn" class="btn-icon" title="Next">⏭</button>
+            <button id="shuffleBtn" class="btn-secondary btn-icon" title="Shuffle">🔀</button>
+            <button id="loopBtn" class="btn-secondary btn-icon" title="Loop Mode">🔁</button>
+        </div>
+
+        <!-- Mode Indicators -->
+        <div class="mode-indicators">
+            <div class="mode-badge" id="shuffleBadge">Shuffle: OFF</div>
+            <div class="mode-badge" id="loopBadge">Loop: OFF</div>
+        </div>
+
+        <!-- Add Song Section -->
+        <div class="upload-section">
+            <!-- Upload from File -->
+            <div class="file-input-wrapper">
+                <input type="file" id="fileInput" accept=".mp3,audio/mpeg" multiple>
+                <button class="upload-btn" id="uploadBtn">📁 Upload MP3 Files</button>
+            </div>
+
+            <!-- Add from URL -->
+            <div style="display: flex; gap: 8px; margin-top: 8px;">
+                <input type="text" id="urlInput" class="search-input" placeholder="Paste URL (https://...)" style="margin-bottom: 0; flex: 1;">
+                <button id="addUrlBtn" class="upload-btn" style="width: auto; min-width: 60px; padding: 12px;">🔗</button>
+            </div>
+
+            <!-- Song Name Input for URL -->
+            <input type="text" id="songNameInput" class="search-input" placeholder="Song name (optional)" style="margin-top: 8px; margin-bottom: 0;">
+        </div>
+
+        <!-- Search -->
+        <div class="search-container">
+            <input type="text" id="searchInput" class="search-input" placeholder="Search songs...">
+        </div>
+
+        <!-- Playlist -->
+        <div class="playlist-section">
+            <div class="playlist-label">Playlist</div>
+            <ul class="playlist" id="playlist">
+                <li class="empty-state">No songs uploaded yet</li>
+            </ul>
+        </div>
+
+        <!-- Status -->
+        <div class="status" id="status"></div>
+    </div>
+
+    <!-- Hidden Audio Element -->
+    <audio id="audioPlayer"></audio>
+
+    <script src="script.js"></script>
+</body>
+</html>

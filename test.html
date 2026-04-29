@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Button</title>
+    <style>
+        body {
+            background: black;
+            color: white;
+            font-family: Arial;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        button {
+            background: #1db954;
+            color: black;
+            border: none;
+            padding: 20px 40px;
+            font-size: 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 10px;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #1ed760;
+        }
+
+        h1 {
+            font-size: 32px;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎵 Test Music Player</h1>
+
+    <button onclick="alert('Play clicked!')">▶ PLAY</button>
+    <button onclick="alert('Next clicked!')">⏭ NEXT</button>
+    <button onclick="alert('Shuffle clicked!')">🔀 SHUFFLE</button>
+
+    <p style="margin-top: 30px; font-size: 18px;">ถ้าเห็นปุ่มสีเขียวนี้ = ปุ่มทำงานได้</p>
+    <p>ถ้าไม่เห็น = มีปัญหากับ browser หรือพื้นที่แสดง</p>
+</body>
+</html>
