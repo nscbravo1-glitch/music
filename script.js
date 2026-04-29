@@ -174,28 +174,37 @@ class MusicPlayer {
         const songName = this.songNameInput?.value.trim() || '';
 
         if (!url) {
-            if (this.status) this.status.textContent = '⚠ Please enter a URL';
+            if (this.status) this.status.textContent = '⚠ กรุณากรอก URL ของเพลง';
             return;
         }
 
         if (!url.startsWith('http://') && !url.startsWith('https://')) {
-            if (this.status) this.status.textContent = '⚠ URL must start with http:// or https://';
+            if (this.status) this.status.textContent = '⚠ URL ต้องเริ่มด้วย http:// หรือ https://';
+            return;
+        }
+
+        // ตรวจสอบเฉพาะไฟล์ audio
+        const audioExtensions = ['.mp3', '.m4a', '.wav', '.ogg', '.webm'];
+        const isAudioFile = audioExtensions.some(ext => url.toLowerCase().includes(ext));
+        if (!isAudioFile) {
+            if (this.status) this.status.textContent = '⚠ URL ต้องชี้ไปที่ไฟล์เสียง (MP3, M4A, WAV, OGG)';
             return;
         }
 
         try {
-            if (this.status) this.status.textContent = '🔄 Loading...';
+            if (this.status) this.status.textContent = '🔄 กำลังโหลด...';
 
             const duration = await this.getAudioDuration(url);
 
             if (duration === 0) {
-                if (this.status) this.status.textContent = '✗ Invalid URL or CORS blocked';
+                if (this.status) this.status.textContent = '✗ ไม่สามารถโหลดได้ - CORS blocked หรือ URL ไม่ถูกต้อง (ลองใช้ MP3 stream)';
+                console.warn('Failed to load URL:', url);
                 return;
             }
 
             const song = {
                 id: Date.now() + Math.random(),
-                name: songName || url.split('/').pop() || 'Unknown Song',
+                name: songName || url.split('/').pop()?.replace(/\.(mp3|m4a|wav|ogg|webm)$/i, '') || 'Unknown Song',
                 url: url,
                 duration: duration,
                 artist: 'Online'
@@ -206,7 +215,7 @@ class MusicPlayer {
             this.filteredSongs = [...this.songs];
             this.renderPlaylist();
 
-            if (this.status) this.status.textContent = `✓ Added: ${song.name}`;
+            if (this.status) this.status.textContent = `✓ เพิ่มเพลงสำเร็จ: ${song.name}`;
 
             if (this.urlInput) this.urlInput.value = '';
             if (this.songNameInput) this.songNameInput.value = '';
@@ -216,7 +225,7 @@ class MusicPlayer {
             }
         } catch (error) {
             console.error('Error adding song from URL:', error);
-            if (this.status) this.status.textContent = '✗ Error: Check URL';
+            if (this.status) this.status.textContent = '✗ Error: ตรวจสอบ URL และ ให้แน่ใจว่ามันเป็น direct link';
         }
     }
 
@@ -373,21 +382,34 @@ class MusicPlayer {
         if (!this.playlist) return;
 
         if (this.filteredSongs.length === 0) {
-            this.playlist.innerHTML = '<li class="empty-state">No songs found</li>';
+            this.playlist.innerHTML = '<li class="empty-state">ยังไม่มีเพลง</li>';
             return;
         }
 
         this.playlist.innerHTML = this.filteredSongs.map((song, index) => `
             <li class="playlist-item ${index === this.currentIndex ? 'active' : ''}" data-index="${index}">
-                <div class="playlist-item-title">🎵 ${song.name}</div>
-                <div class="playlist-item-duration">${this.formatTime(song.duration)}</div>
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <div style="flex: 1;">
+                        <div class="playlist-item-title">🎵 ${song.name}</div>
+                        <div class="playlist-item-duration">${this.formatTime(song.duration)}</div>
+                    </div>
+                    <button class="delete-btn" data-song-id="${song.id}" title="ลบเพลง">✕</button>
+                </div>
             </li>
         `).join('');
 
         this.playlist.querySelectorAll('.playlist-item').forEach((item) => {
-            item.addEventListener('click', () => {
+            const titleDiv = item.querySelector('div > div');
+            titleDiv.addEventListener('click', () => {
                 const index = parseInt(item.dataset.index);
                 this.playIndex(index);
+            });
+            
+            const deleteBtn = item.querySelector('.delete-btn');
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const songId = deleteBtn.dataset.songId;
+                this.removeSong(parseFloat(songId));
             });
         });
     }
@@ -397,6 +419,37 @@ class MusicPlayer {
         this.playlist.querySelectorAll('.playlist-item').forEach((item, index) => {
             item.classList.toggle('active', index === this.currentIndex);
         });
+    }
+
+    // Remove song from playlist
+    removeSong(songId) {
+        const index = this.songs.findIndex(song => song.id === songId);
+        if (index === -1) return;
+
+        const song = this.songs[index];
+        
+        // Stop playing if current song is being deleted
+        if (this.currentFileIndex === index) {
+            this.audio.pause();
+            this.audio.src = '';
+            this.isPlaying = false;
+            this.updatePlayButton();
+        }
+
+        // Remove from songs array
+        this.songs.splice(index, 1);
+        this.saveSongsToStorage();
+        
+        // Update filtered songs and rerender
+        this.filteredSongs = this.filteredSongs.filter(s => s.id !== songId);
+        this.renderPlaylist();
+
+        // Adjust current index
+        if (this.currentIndex >= this.filteredSongs.length) {
+            this.currentIndex = Math.max(0, this.filteredSongs.length - 1);
+        }
+
+        if (this.status) this.status.textContent = `🗑️ ลบเพลง: ${song.name}`;
     }
 
     // === Storage ===
